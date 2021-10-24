@@ -1,3 +1,7 @@
+# Other ignores
+**.vscode
+testfile.aseprite
+
 # Compiled Lua sources
 luac.out
 
