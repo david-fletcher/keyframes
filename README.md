@@ -1,5 +1,5 @@
 # Keyframes
-![hero image](./assets/hero.png)
+![hero image](./assets/hero.gif)
 
 An Aseprite extension that allows you to add and jump between keyframes in the timeline!
 
