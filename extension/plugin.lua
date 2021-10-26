@@ -24,6 +24,12 @@ function init(plugin)
     print("Aseprite is initializing Keyframes")
 
     -----------------------------------
+    -- "GLOBAL" VARIABLES
+    -----------------------------------
+    local isDialogOpen = false
+    local tagMode = false
+
+    -----------------------------------
     -- CREATE ERROR DIALOG
     -----------------------------------
     -- param: str - a string value that will be displayed to the user (usually an error message)
@@ -137,13 +143,21 @@ function init(plugin)
 
         -- lock the frame so that the user has trouble editing it
         klayer.isEditable = false
-        for fnum=app.activeFrame.frameNumber-1,1,-1 do
+
+        -- bound is 1 if we are searching the whole sprite; and the starting tag frame if we are searching just within the tag
+        local bound = 1
+        if (app.activeTag ~= nil) and (tagMode) then
+            bound = app.activeTag.fromFrame.frameNumber
+        end
+
+        -- loop just up to the bound
+        for fnum=app.activeFrame.frameNumber-1,bound,-1 do
             if (isCelFilled(klayer, fnum)) then
                 app.activeFrame = app.activeSprite.frames[fnum]
                 app.refresh()
                 return
             end
-        end
+        end 
     end
     
     local function gotoNext()
@@ -152,7 +166,15 @@ function init(plugin)
 
         -- lock the frame so that the user has trouble editing it
         klayer.isEditable = false
-        for fnum=app.activeFrame.frameNumber+1,#app.activeSprite.frames do
+
+        -- bound is the last frame if we are searching the whole sprite; and the ending tag frame if we are searching just within the tag
+        local bound = #app.activeSprite.frames
+        if (app.activeTag ~= nil) and (tagMode) then
+            bound = app.activeTag.toFrame.frameNumber
+        end
+
+        -- loop just up to the bound
+        for fnum=app.activeFrame.frameNumber+1,bound do
             if (isCelFilled(klayer, fnum)) then
                 app.activeFrame = app.activeSprite.frames[fnum]
                 app.refresh()
@@ -165,7 +187,11 @@ function init(plugin)
     -- HELPER DIALOG (OPTIONAL)
     -----------------------------------
     local function keyframeEditor()
-        local dialog = Dialog("Keyframes")
+        local dialog = Dialog{ title="Keyframes", onclose=function()
+            isDialogOpen = false
+            tagMode = false
+            end
+        }
 
         dialog:button {
             id="add",
@@ -201,6 +227,18 @@ function init(plugin)
             end
         }
 
+        dialog:newrow()
+
+        dialog:check {
+            id="tag_mode",
+            text="Stay within tag?",
+            selected=false,
+            onclick=function()
+                tagMode = dialog.data.tag_mode
+            end
+        }
+
+        isDialogOpen = true
         return dialog
     end
 
@@ -223,7 +261,7 @@ function init(plugin)
         title="Open Keyframe Editor",
         group="cel_frames",
         onclick=function()
-            keyframeEditor():show{ wait=false }
+            if (not isDialogOpen) then keyframeEditor():show{ wait=false } end
         end
     }
 
